@@ -82,7 +82,6 @@ const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    if (STOREFRONT_ACCESS_TOKEN === '2ff722b3b6950604c729266f03713082') return;
     fetchShopifyData();
   }, []);
 
@@ -717,3 +716,4 @@ const App = () => {
 
 
 export default App;
+
