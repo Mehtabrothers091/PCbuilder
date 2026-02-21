@@ -88,10 +88,14 @@ const App = () => {
   const fetchShopifyData = async () => {
     setLoading(true);
     setError(null);
-    
-    const query = `
+
+    const buildQuery = (cursor) => `
       {
-        products(first: 250, query: "tag:Builder_Component") {
+        products(first: 250, query: "tag:Builder_Component"${cursor ? `, after: "${cursor}"` : ''}) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
           edges {
             node {
               id
@@ -117,19 +121,31 @@ const App = () => {
     `;
 
     try {
-      const response = await fetch(`https://${SHOPIFY_DOMAIN}/api/2024-01/graphql.json`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Storefront-Access-Token': STOREFRONT_ACCESS_TOKEN,
-        },
-        body: JSON.stringify({ query }),
-      });
+      let allEdges = [];
+      let hasNextPage = true;
+      let cursor = null;
 
-      const result = await response.json();
-      if (result.errors) throw new Error(result.errors[0].message);
-      
-      const parsedData = parseShopifyData(result.data.products.edges);
+      while (hasNextPage) {
+        const response = await fetch(`https://${SHOPIFY_DOMAIN}/api/2024-01/graphql.json`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Shopify-Storefront-Access-Token': STOREFRONT_ACCESS_TOKEN,
+          },
+          body: JSON.stringify({ query: buildQuery(cursor) }),
+        });
+
+        const result = await response.json();
+        if (result.errors) throw new Error(result.errors[0].message);
+
+        const { edges, pageInfo } = result.data.products;
+        allEdges = allEdges.concat(edges);
+        hasNextPage = pageInfo.hasNextPage;
+        cursor = pageInfo.endCursor;
+      }
+
+      console.log(`[PCBuilder] Fetched ${allEdges.length} total products from Shopify`);
+      const parsedData = parseShopifyData(allEdges);
       setComponentData(parsedData);
     } catch (err) {
       console.error("Shopify Fetch Error:", err);
@@ -722,5 +738,4 @@ const App = () => {
 
 
 export default App;
-
 
