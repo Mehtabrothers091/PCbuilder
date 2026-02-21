@@ -152,7 +152,10 @@ const App = () => {
       let category = null;
 
       tags.forEach(tag => {
-        const [key, val] = tag.split(':');
+        const colonIndex = tag.indexOf(':');
+        if (colonIndex === -1) return;
+        const key = tag.substring(0, colonIndex);
+        const val = tag.substring(colonIndex + 1);
         if (!val) return;
         
         const cleanKey = key.trim().toLowerCase();
@@ -166,6 +169,9 @@ const App = () => {
         else if (cleanKey === 'coolertype') specs.coolerType = cleanVal;
         else if (cleanKey === 'sticks') specs.sticks = parseInt(cleanVal);
       });
+
+      // Debug: log products and their detected category
+      console.log(`[PCBuilder] Product: "${node.title}" | Detected category: "${category}" | Tags: [${tags.join(', ')}]`);
 
       if (category && newData[category]) {
         newData[category].push({
@@ -716,4 +722,5 @@ const App = () => {
 
 
 export default App;
+
 
